@@ -50,26 +50,7 @@ the expensive LLM runs only on what already looks suspicious.
 
 ## Architecture
 
-```mermaid
-flowchart LR
-    GEN[Synthetic generator<br/>normal + injected incidents] -->|POST /api/logs| API
-    CLIENT[Your services] -->|POST /api/logs| API
-    subgraph APP[FastAPI app — single local process]
-        API[Ingest] --> WIN[Windowing<br/>per-service buckets]
-        WIN --> P{Hybrid detector}
-        P -->|1 always-on| STATS[EWMA + z-score]
-        P -->|2 multivariate| IF[Isolation Forest]
-        P -->|3 gated, optional| LLM[Claude classifier]
-        STATS --> SCORE[Hybrid score + severity]
-        IF --> SCORE
-        LLM --> SCORE
-        SCORE --> DB[(SQLite)]
-        SCORE --> ALERT[Alerter + cooldown]
-        DB --> DASH[Chart.js dashboard]
-    end
-    ALERT -->|webhook| MOCK[Mock receiver<br/>Slack/PagerDuty stand-in]
-    BROWSER[Browser] --> DASH
-```
+![w:1100 Architecture: logs ingested into per-service windows, scored by a 3-layer hybrid detector, persisted to SQLite, and surfaced via alerts and a live dashboard](architecture.png)
 
 Logs → per-service time windows → 3-layer detection → persist → **alert + live dashboard**.
 
