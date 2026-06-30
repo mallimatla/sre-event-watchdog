@@ -148,3 +148,12 @@ Tool: Claude Code (end-to-end, no manual edits)
 > merge the PR
 
 **Summary of changes:** Verified CI green on the latest PR commit (ruff + pytest on Python 3.11 & 3.12) and the PR `MERGEABLE`/`CLEAN`, then merged PR #1 into `main` with a merge commit (preserving the build history) and deleted the feature branch. Confirmed clean working tree; main's post-merge CI run kicked off. Appended this final audit entry.
+
+---
+
+### Entry 14 — 2026-06-30 (T0 + ~5:50)
+
+**Prompt (verbatim):**
+> I've placed the dashboard screenshot at docs/demo.png. Update the README image reference from docs/demo.gif to docs/demo.png (and fix any other demo.gif references), confirm the image renders, then commit and push that docs-only change to main. After that, give me a final submission checklist confirming every required deliverable exists and where: (1) public GitHub repo URL, (2) prompts.md, (3) the deck docs/DECK.md, (4) README with the screenshot, (5) the explicit "fully local, no cloud resources to decommission" confirmation. Report final Elapsed Time.
+
+**Summary of changes:** User added `docs/demo.png` (3840×4417 dashboard screenshot showing an injected incident — populated hybrid stats+iforest anomalies, all alerts `sent`). Updated the README Demo section to embed `docs/demo.png` and removed the obsolete GIF placeholder text; confirmed no other `demo.gif` references remain (the one in prompts.md is a verbatim audit quote, left intact). Committed README + the PNG + this entry directly to `main` (docs-only, repo already merged) and pushed. Provided the final submission checklist.

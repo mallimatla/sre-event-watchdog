@@ -102,11 +102,11 @@ Without these, everything still runs on the stats + ML layers.
 
 ## Demo
 
-> _Screenshot / GIF placeholder — anomalies firing on the live dashboard:_
->
-> ![Watchdog dashboard — anomalies firing](docs/demo.gif)
->
-> _(Replace `docs/demo.gif` with a capture of the dashboard during an injected incident.)_
+The live dashboard during an injected `dependency_outage` — error-rate and latency
+charts spike, the **Recent anomalies** panel fills with hybrid `stats+iforest`
+high-severity detections (with z-scores), and every alert is delivered (`sent`):
+
+![Watchdog dashboard — anomalies firing across services](docs/demo.png)
 
 📊 **Presentation deck:** [`docs/DECK.md`](docs/DECK.md) — a [Marp](https://marp.app/) slide deck; render with `marp docs/DECK.md -o deck.html` (or `--pdf`), or preview live with the Marp VS Code extension.
 
