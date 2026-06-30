@@ -116,3 +116,12 @@ Tool: Claude Code (end-to-end, no manual edits)
 > push it and open a PR
 
 **Summary of changes:** No remote existed (local-only repo). Confirmed two user decisions: public visibility, and seed-empty-main + PR-the-project structure. Created public GitHub repo `mallimatla/sre-event-watchdog`, seeded an empty `main` root commit, re-rooted `feat/sre-event-watchdog-mvp` onto it (so the PR shows the whole project as a reviewable diff with a common ancestor), pushed both branches, and opened PR #1 (feat → main). Added `*.log` to `.gitignore`; no runtime artifacts committed.
+
+---
+
+### Entry 11 — 2026-06-30 (T0 + ~5:15)
+
+**Prompt (verbatim):**
+> add a CI workflow with lint and pytest
+
+**Summary of changes:** Added GitHub Actions CI (`.github/workflows/ci.yml`): ruff lint + pytest on a Python 3.11/3.12 matrix, triggered on push + PR to `main`, with pip caching. Added `ruff.toml` (E/F/W/I rules, line-length 100, `tests/*` E402 ignore for the env-before-import pattern). Fixed the lint findings to get a green check: ruff auto-sorted imports in 4 test files and I wrapped one over-length assertion in `test_llm.py`. Verified locally: `ruff check` clean, 34 tests pass. Added a CI status badge to the README. Committed + pushed to update PR #1.

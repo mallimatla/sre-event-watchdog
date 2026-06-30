@@ -156,7 +156,10 @@ Python 3.11+ · FastAPI · SQLite (stdlib `sqlite3`) · scikit-learn · NumPy ·
 
 ## Testing
 
+[![CI](https://github.com/mallimatla/sre-event-watchdog/actions/workflows/ci.yml/badge.svg)](https://github.com/mallimatla/sre-event-watchdog/actions/workflows/ci.yml)
 ![tests](https://img.shields.io/badge/tests-34%20passing-2ecc71)
+
+CI runs **ruff** (lint) and **pytest** on Python 3.11 and 3.12 for every push and PR to `main`.
 
 ```bash
 .venv/bin/python -m pytest        # or .venv\Scripts\python -m pytest on Windows

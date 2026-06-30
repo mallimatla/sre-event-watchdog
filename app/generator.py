@@ -15,7 +15,6 @@ Incidents can also be triggered on demand via ``POST /api/demo/inject``.
 from __future__ import annotations
 
 import threading
-import time
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from typing import Any

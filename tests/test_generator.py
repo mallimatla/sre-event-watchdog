@@ -22,7 +22,11 @@ from app.config import get_settings  # noqa: E402
 get_settings.cache_clear()
 
 from app.generator import (  # noqa: E402
-    DEFAULT_PROFILES, SCENARIOS, ServiceProfile, SyntheticGenerator, _Incident,
+    DEFAULT_PROFILES,
+    SCENARIOS,
+    ServiceProfile,
+    SyntheticGenerator,
+    _Incident,
 )
 from app.pipeline import DetectionPipeline  # noqa: E402
 

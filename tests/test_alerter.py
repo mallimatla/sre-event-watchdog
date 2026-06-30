@@ -22,7 +22,8 @@ from starlette.testclient import TestClient  # noqa: E402
 from app import db  # noqa: E402
 from app.alerter import Alerter  # noqa: E402
 from app.config import get_settings  # noqa: E402
-from mock_receiver.main import app as mock_app, _received  # noqa: E402
+from mock_receiver.main import _received
+from mock_receiver.main import app as mock_app  # noqa: E402
 
 get_settings.cache_clear()
 

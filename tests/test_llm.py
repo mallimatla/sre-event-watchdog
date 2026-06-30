@@ -25,7 +25,6 @@ get_settings.cache_clear()
 from app.detectors.llm import LLMClassifier  # noqa: E402
 from app.pipeline import DetectionPipeline  # noqa: E402
 
-
 # --- fake Anthropic client (duck-typed) ----------------------------------
 
 class _Block:
@@ -123,7 +122,8 @@ def test_pipeline_enriches_anomaly():
     # in-memory dict enriched
     assert anomaly["category"] == "dependency_outage"
     assert anomaly["method"].endswith("+llm")
-    assert "recommended" in anomaly["explanation"].lower() or "failover" in anomaly["explanation"].lower()
+    expl = anomaly["explanation"].lower()
+    assert "recommended" in expl or "failover" in expl
     assert anomaly.get("suppress_alert") is not True  # real incident → still pages
     # persisted to DB
     row = db.list_anomalies(limit=1)[0]
