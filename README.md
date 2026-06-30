@@ -108,6 +108,8 @@ Without these, everything still runs on the stats + ML layers.
 >
 > _(Replace `docs/demo.gif` with a capture of the dashboard during an injected incident.)_
 
+📊 **Presentation deck:** [`docs/DECK.md`](docs/DECK.md) — a [Marp](https://marp.app/) slide deck; render with `marp docs/DECK.md -o deck.html` (or `--pdf`), or preview live with the Marp VS Code extension.
+
 ---
 
 ## API surface

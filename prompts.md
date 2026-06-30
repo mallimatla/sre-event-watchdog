@@ -124,4 +124,18 @@ Tool: Claude Code (end-to-end, no manual edits)
 **Prompt (verbatim):**
 > add a CI workflow with lint and pytest
 
-**Summary of changes:** Added GitHub Actions CI (`.github/workflows/ci.yml`): ruff lint + pytest on a Python 3.11/3.12 matrix, triggered on push + PR to `main`, with pip caching. Added `ruff.toml` (E/F/W/I rules, line-length 100, `tests/*` E402 ignore for the env-before-import pattern). Fixed the lint findings to get a green check: ruff auto-sorted imports in 4 test files and I wrapped one over-length assertion in `test_llm.py`. Verified locally: `ruff check` clean, 34 tests pass. Added a CI status badge to the README. Committed + pushed to update PR #1.
+**Summary of changes:** Added GitHub Actions CI (`.github/workflows/ci.yml`): ruff lint + pytest on a Python 3.11/3.12 matrix, triggered on push + PR to `main`, with pip caching. Added `ruff.toml` (E/F/W/I rules, line-length 100, `tests/*` E402 ignore for the env-before-import pattern). Fixed the lint findings to get a green check: ruff auto-sorted imports in 4 test files and I wrapped one over-length assertion in `test_llm.py`. Verified locally: `ruff check` clean, 34 tests pass. Added a CI status badge to the README. Committed + pushed to update PR #1. CI run went green on both Python versions.
+
+---
+
+### Entry 12 — 2026-06-30 (T0 + ~5:30)
+
+**Prompt (verbatim):**
+> Two final deliverables before I package the submission:
+>
+> 1. Generate the AI presentation deck the challenge requires. Create docs/DECK.md as a Marp markdown deck (~7-8 slides): title/value-prop, the problem (SRE alert fatigue / late incident detection), architecture (the 3-layer hybrid detector + alerting + dashboard, with the Mermaid diagram), the GenAI layer (structured tool-use root-cause output, cost-gated, no-key fallback), a "live demo" slide describing the one-command flow, results/metrics (34 tests, 2-layer detection, <demo numbers>), the vibe-coding process (no manual edits, prompts.md audit, the 4 engineering-judgment debugging calls), and a "production hardening / what's next" slide. Keep it crisp and reviewer-facing. Also add a one-line note in the README pointing to docs/DECK.md and how to render it (marp).
+> 2. Tell me the exact command to run the app so I can open the dashboard in my browser and capture a screenshot for docs/demo.gif (or a PNG) — I'll do that part manually.
+>
+> Report Elapsed Time.
+
+**Summary of changes:** Created `docs/DECK.md` — an 8-slide Marp deck (title/value-prop, problem, architecture w/ Mermaid, hybrid-design judgment, GenAI layer, one-command live demo, results/metrics, vibe-coding process w/ the 4 debugging calls, production-hardening), styled to match the dashboard theme. Added a one-line README pointer to the deck with the `marp` render command. Provided the exact run command for the manual screenshot capture.
