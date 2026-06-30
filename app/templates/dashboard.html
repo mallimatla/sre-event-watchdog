@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SRE Event Watchdog</title>
+  <link rel="stylesheet" href="/static/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+</head>
+<body>
+  <header>
+    <div class="title">
+      <h1>🛰️ SRE Event Watchdog</h1>
+      <span class="muted">hybrid stats + ML + LLM log anomaly detection</span>
+    </div>
+    <div class="meta" id="badges">
+      <span class="badge">v{{ version }}</span>
+      {% if llm_active %}
+        <span class="badge badge-on">LLM enrichment: ON</span>
+      {% elif llm_enabled %}
+        <span class="badge badge-warn">LLM enabled, no key</span>
+      {% else %}
+        <span class="badge badge-off">LLM: OFF (stats+ML)</span>
+      {% endif %}
+      <span class="badge" id="health-badge">…</span>
+    </div>
+  </header>
+
+  <section class="controls">
+    <div class="summary" id="summary"></div>
+    <div class="inject">
+      <strong>Demo:</strong>
+      <select id="inj-service"></select>
+      <select id="inj-scenario">
+        <option value="dependency_outage">dependency_outage</option>
+        <option value="latency_regression">latency_regression</option>
+        <option value="error_burst">error_burst</option>
+        <option value="traffic_spike">traffic_spike</option>
+      </select>
+      <button id="inj-btn">Inject incident</button>
+      <span class="muted" id="inj-result"></span>
+    </div>
+  </section>
+
+  <main class="grid">
+    <div class="card"><h3>Log volume / bucket</h3><canvas id="c-volume"></canvas></div>
+    <div class="card"><h3>Error rate</h3><canvas id="c-error"></canvas></div>
+    <div class="card"><h3>Latency p95 (ms)</h3><canvas id="c-latency"></canvas></div>
+    <div class="card"><h3>Anomaly score</h3><canvas id="c-anomaly"></canvas></div>
+  </main>
+
+  <section class="panels">
+    <div class="card">
+      <h3>Recent anomalies</h3>
+      <table id="anomaly-table"><thead><tr>
+        <th>Time</th><th>Service</th><th>Sev</th><th>Score</th><th>Method</th><th>Category</th><th>Explanation</th>
+      </tr></thead><tbody></tbody></table>
+    </div>
+    <div class="card">
+      <h3>Recent alerts</h3>
+      <table id="alert-table"><thead><tr>
+        <th>Time</th><th>Service</th><th>Sev</th><th>Status</th>
+      </tr></thead><tbody></tbody></table>
+    </div>
+  </section>
+
+  <footer>Fully local — SQLite + localhost + synthetic data. No cloud resources. ·
+    <a href="/docs">API docs</a> · <a href="/api/health">health</a></footer>
+
+  <script>
+    const PALETTE = ["#5b9dff","#2ecc71","#f1c40f","#e67e22","#9b59b6","#1ab7c4"];
+    const SEV_COLOR = {high:"#e74c3c", med:"#f1c40f", low:"#5b9dff"};
+    const fmt = iso => { try { return new Date(iso).toLocaleTimeString(); } catch(e){ return iso; } };
+    const color = i => PALETTE[i % PALETTE.length];
+
+    const baseOpts = (yMax) => ({
+      responsive: true, animation: false, maintainAspectRatio: false,
+      interaction: {mode:"nearest", intersect:false},
+      scales: {
+        x: {ticks:{color:"#9aa0b4", maxTicksLimit:8, autoSkip:true}, grid:{color:"#23283a"}},
+        y: {beginAtZero:true, suggestedMax:yMax, ticks:{color:"#9aa0b4"}, grid:{color:"#23283a"}}
+      },
+      plugins: {legend:{labels:{color:"#cdd2e0", boxWidth:12}}}
+    });
+
+    function mkLine(id, yMax){
+      return new Chart(document.getElementById(id), {type:"line", data:{labels:[],datasets:[]}, options: baseOpts(yMax)});
+    }
+    const charts = {
+      volume: mkLine("c-volume"),
+      error: mkLine("c-error"),
+      latency: mkLine("c-latency"),
+      anomaly: new Chart(document.getElementById("c-anomaly"), {
+        type:"scatter",
+        data:{labels:[], datasets:[]},
+        options: {...baseOpts(1.0), scales:{...baseOpts(1.0).scales, y:{...baseOpts(1.0).scales.y, min:0, max:1}}}
+      })
+    };
+
+    function seriesDatasets(ts, field){
+      return ts.services.map((s,i)=>({
+        label:s, data: ts.series[s][field], borderColor: color(i),
+        backgroundColor: color(i), borderWidth:2, pointRadius:0, tension:0.25, spanGaps:true
+      }));
+    }
+
+    function renderCharts(ts){
+      const labels = ts.labels.map(fmt);
+      charts.volume.data.labels = labels;
+      charts.volume.data.datasets = seriesDatasets(ts, "count");
+      charts.volume.update();
+      charts.error.data.labels = labels;
+      charts.error.data.datasets = seriesDatasets(ts, "error_rate");
+      charts.error.update();
+      charts.latency.data.labels = labels;
+      charts.latency.data.datasets = seriesDatasets(ts, "latency_p95");
+      charts.latency.update();
+
+      // anomaly scatter + threshold line
+      const pts = ts.anomalies.map(a => ({x: fmt(a.bucket_start), y: a.score, sev:a.severity}));
+      const thr = labels.map(l => ({x:l, y: ts.alert_threshold}));
+      charts.anomaly.data.labels = labels;
+      charts.anomaly.data.datasets = [
+        {label:"alert threshold", type:"line", data:thr, borderColor:"#e74c3c",
+         borderDash:[6,4], borderWidth:1.5, pointRadius:0, fill:false},
+        {label:"anomalies", data:pts, pointRadius:6, pointHoverRadius:8,
+         backgroundColor: pts.map(p=>SEV_COLOR[p.sev]||"#888"),
+         borderColor:"#11141d"}
+      ];
+      charts.anomaly.update();
+    }
+
+    function renderSummary(ts){
+      const el = document.getElementById("summary");
+      el.innerHTML = ts.services.map(s=>{
+        const d = ts.summary[s] || {};
+        const er = d.error_rate!=null ? (d.error_rate*100).toFixed(1)+"%" : "–";
+        const erClass = (d.error_rate||0) > 0.1 ? "bad" : "";
+        return `<div class="scard"><div class="sname">${s}</div>
+          <div class="srow">vol <b>${d.count??"–"}</b></div>
+          <div class="srow ${erClass}">err <b>${er}</b></div>
+          <div class="srow">p95 <b>${d.latency_p95??"–"}ms</b></div></div>`;
+      }).join("");
+      // populate inject service dropdown once
+      const sel = document.getElementById("inj-service");
+      if (sel.options.length === 0 && ts.services.length){
+        sel.innerHTML = ts.services.map(s=>`<option>${s}</option>`).join("");
+      }
+    }
+
+    function renderAnomalyTable(ts){
+      const body = document.querySelector("#anomaly-table tbody");
+      const rows = [...ts.anomalies].reverse().slice(0,12);
+      body.innerHTML = rows.map(a=>`<tr>
+        <td>${fmt(a.ts)}</td><td>${a.service}</td>
+        <td><span class="sev sev-${a.severity}">${a.severity}</span></td>
+        <td>${a.score.toFixed(2)}</td><td>${a.method}</td>
+        <td>${a.category? `<span class="cat">${a.category}</span>`:"–"}</td>
+        <td class="exp">${a.explanation||""}</td></tr>`).join("") ||
+        `<tr><td colspan="7" class="muted">no anomalies yet</td></tr>`;
+    }
+
+    async function renderAlerts(){
+      const r = await fetch("/api/alerts?limit=12").then(r=>r.json());
+      const body = document.querySelector("#alert-table tbody");
+      body.innerHTML = r.alerts.map(a=>{
+        let p={}; try{p=JSON.parse(a.payload_json)}catch(e){}
+        const st = a.status==="sent" ? "ok" : "bad";
+        return `<tr><td>${fmt(a.ts)}</td><td>${p.service||"–"}</td>
+          <td><span class="sev sev-${p.severity||'low'}">${p.severity||"–"}</span></td>
+          <td><span class="status status-${st}">${a.status}</span></td></tr>`;
+      }).join("") || `<tr><td colspan="4" class="muted">no alerts yet</td></tr>`;
+    }
+
+    async function renderHealth(){
+      const h = await fetch("/api/health").then(r=>r.json());
+      const inc = Object.keys(h.active_incidents||{}).length;
+      const b = document.getElementById("health-badge");
+      b.textContent = `${h.logs_ingested} logs · ${h.anomalies} anomalies · ${inc} active incident(s)`;
+      b.className = "badge " + (inc>0 ? "badge-warn" : "badge-on");
+    }
+
+    async function refresh(){
+      try{
+        const ts = await fetch("/api/stats/timeseries").then(r=>r.json());
+        renderSummary(ts); renderCharts(ts); renderAnomalyTable(ts);
+        await renderAlerts(); await renderHealth();
+      }catch(e){ console.error(e); }
+    }
+
+    document.getElementById("inj-btn").onclick = async ()=>{
+      const s = document.getElementById("inj-service").value;
+      const sc = document.getElementById("inj-scenario").value;
+      const res = await fetch(`/api/demo/inject?service=${encodeURIComponent(s)}&scenario=${sc}`, {method:"POST"}).then(r=>r.json());
+      document.getElementById("inj-result").textContent =
+        res.error ? ("⚠ "+res.error) : `injected ${res.scenario} on ${res.service}`;
+      setTimeout(refresh, 1500);
+    };
+
+    refresh();
+    setInterval(refresh, 3000);
+  </script>
+</body>
+</html>
