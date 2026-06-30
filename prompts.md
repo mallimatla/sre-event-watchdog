@@ -107,3 +107,12 @@ Tool: Claude Code (end-to-end, no manual edits)
 > Report Elapsed Time when done.
 
 **Summary of changes:** Final polish (Milestone 8). Removed stray live-check log files. Refreshed README Testing section with a 34-passing badge + accurate coverage description. Expanded the README "Vibe-coding process" with an "Engineering judgment" subsection covering the 4 real debugging decisions (EWMA alpha tuning, Isolation Forest constant-feature root cause + reverted no-op StandardScaler, measured z_threshold FP reduction with the honest ~1% IF residual, httpx 0.28 ASGITransport fix), linked to this log. Ran a high-effort workflow-backed code review (23 agents) over the full diff → 24 verified findings / 15 distinct defects (1 refuted). Fixed the 8 genuinely worth fixing: (1) alerter cooldown armed before delivery → arm only on success; (2) stats EWMA absorbing sustained incidents → freeze baseline during a confirmed anomaly; (3) stats None-latency coerced to 0.0 corrupting the baseline → skip missing features; (4) Isolation Forest absorbing sustained incidents → keep flagged windows out of the training buffer; (5) hybrid max-score inflated by a non-flagging IF layer → combine only flagging layers; (6) LLM "noise" verdict ignored for alerting → suppress the page; (7) generator.status() racing the tick thread → snapshot under lock; (8) live-tick logs timestamped a full bucket into the future → spread over the tick interval. Added 4 regression tests (34 total, all green). Deliberately deferred 7 lower-value items (severity-escalation cooldown, variance floor, late-log misattribution, dashboard 0.0 truthiness, per-row commits, sync startup seeding) as MVP trade-offs / already-mitigated. Verified live: detection + alerting end-to-end, health endpoint survives concurrent load with no 500s. Committed the result.
+
+---
+
+### Entry 10 — 2026-06-30 (T0 + ~5:05)
+
+**Prompt (verbatim):**
+> push it and open a PR
+
+**Summary of changes:** No remote existed (local-only repo). Confirmed two user decisions: public visibility, and seed-empty-main + PR-the-project structure. Created public GitHub repo `mallimatla/sre-event-watchdog`, seeded an empty `main` root commit, re-rooted `feat/sre-event-watchdog-mvp` onto it (so the PR shows the whole project as a reviewable diff with a common ancestor), pushed both branches, and opened PR #1 (feat → main). Added `*.log` to `.gitignore`; no runtime artifacts committed.
